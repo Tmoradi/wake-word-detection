@@ -25,4 +25,4 @@ def download_data(prefix_list:list[str]) -> None:
                 print(f"We cannot download{obj.key} from {prefix}!")
 
 if __name__ == "__main__":
-    download_data(Prefix=['train'])
+    download_data(prefix_list=['test'])
