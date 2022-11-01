@@ -1,0 +1,4 @@
+outs:
+- md5: c9c420447df8cb3ef34eb550c26bb882
+  size: 34072
+  path: data/train_labels.csv
