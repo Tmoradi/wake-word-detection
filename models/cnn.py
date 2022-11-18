@@ -1,10 +1,11 @@
 import pytorch_lightning as pl 
 import torchmetrics
+import torch
 import torch.nn as nn 
 import torch.nn.functional as F
 
 class MelSpectrogramNetwork(pl.LightningModule):
- def __init__(self,in_channels,learning_rate,**kwargs):
+    def __init__(self,in_channels,learning_rate,**kwargs):
         super().__init__()
 
         self.in_channels = in_channels 
@@ -22,10 +23,13 @@ class MelSpectrogramNetwork(pl.LightningModule):
         )
 
         self.fc = nn.Sequential( 
-          nn.Linear(in_features=(128),out_features=64),
+          nn.Linear(in_features=(13312),out_features=1028),
           nn.ReLU(),
           nn.Dropout(.5),
-          nn.Linear(in_features=(64),out_features=2),
+          nn.Linear(in_features=(1028),out_features=256),
+          nn.ReLU(),
+          nn.Dropout(.5),
+          nn.Linear(in_features=(256),out_features=2)
         ) 
         # Here we are going to be adding our TorchMetrics 
         self.train_precision = torchmetrics.Precision(num_classes=2)
@@ -46,11 +50,11 @@ class MelSpectrogramNetwork(pl.LightningModule):
 
     def shared_step(self,batch,stage):
 
-        mel_spec = batch["data"]
+        mel_spec = batch["data"].type(torch.cuda.FloatTensor)
         y = batch["label"]
 
 
-        assert mel_spec.ndim == 3 # (batch x C x H x W ) 
+        assert mel_spec.ndim == 4 # (batch x C x H x W ) 
 
         y_hat = self.forward(mel_spec)
         loss = F.cross_entropy(y_hat,y)
@@ -60,13 +64,15 @@ class MelSpectrogramNetwork(pl.LightningModule):
         "y":y}
 
     def shared_epoch_end(self, outputs, stage):
+        
         y_hat = torch.cat([x['y_hat'] for x in outputs])
         y = torch.cat([x['y'] for x in outputs])
-
-       if stage == 'train':
+        
+        if stage == 'train':
             self.train_precision(y_hat,y)
             self.train_recall(y_hat,y)
             self.train_f1_score(y_hat,y)
+
             metrics = {
             f"{stage}_precision":  self.train_precision,
             f"{stage}_recall":  self.train_recall,
@@ -77,11 +83,12 @@ class MelSpectrogramNetwork(pl.LightningModule):
             self.val_precision(y_hat,y)
             self.val_recall(y_hat,y)
             self.val_f1_score(y_hat,y)
+            
             metrics = {
             f"{stage}_precision":  self.val_precision,
             f"{stage}_recall":  self.val_recall,
             f"{stage}_f1": self.val_f1_score
-
+            }
         self.log_dict(metrics, prog_bar=True,on_step=False,on_epoch=True)
 
     def training_step(self, batch, batch_idx):

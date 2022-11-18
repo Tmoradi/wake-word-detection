@@ -1,5 +1,7 @@
-from torch.utils.Data import Dataset 
-from torchvision.transforms as transforms
+from torch.utils.data import Dataset 
+import torch
+import pandas as pd
+import torchvision.transforms as transforms
 from PIL import Image 
 
 class MelSpectrogramDataset(Dataset):
@@ -7,13 +9,13 @@ class MelSpectrogramDataset(Dataset):
         super().__init__()
         self.data_df = data_labels
         self.transforms = transforms.Compose([
-            transforms.PILtoTensor()
+            transforms.PILToTensor()
         ])
     
     def __len__(self) -> int:
         return len(self.data_df)
     
-    def __getitem__(self,idx)->:
+    def __getitem__(self,idx)-> dict[torch.tensor,int]:
 
         file_path = self.data_df.loc[idx,'paths']
         label = self.data_df.loc[idx,'label']
@@ -26,6 +28,6 @@ class MelSpectrogramDataset(Dataset):
         sample['data'] = mel_spectrogram
         sample['label'] = label
 
-        return output
+        return sample
 
         

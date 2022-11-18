@@ -1,5 +1,8 @@
 .DS_Store 
 .ipynb_checkpoints
-__pychache__ 
+__pycache__ 
 data/train
 data/test
+experiments/
+lightning_logs/
+*.pt
