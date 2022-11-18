@@ -5,4 +5,5 @@ data/train
 data/test
 experiments/
 lightning_logs/
+logs/
 *.pt
